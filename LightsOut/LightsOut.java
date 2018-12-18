@@ -15,7 +15,7 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 
 	StringBuffer strBuffer;
 
-	final int intBoardSize = 5;
+	final int intBoardSize = 4;
 	
 	// Initializes 2D array to determine if each light is on.
 	boolean[][] boolLightState = new boolean[intBoardSize][intBoardSize];
@@ -33,7 +33,7 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 
 	Font fntSerif, fntSansSerif, fntMonospaced, fntDialog;
 	
-	Image imgLightOff, imgLightHover, imgLightOn;
+	Image imgLightOff, imgLightHoverOn, imgLightHoverOff, imgLightOn, imgTitle;
 	
 	boolean requestSolution = false;
 	
@@ -50,26 +50,35 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 		fntDialog = new Font("Dialog", Font.BOLD, 14);
 		
 		imgLightOn = getImage(getDocumentBase(), "lightOn.png");
-		imgLightHover = getImage(getDocumentBase(), "lightHover.png");
+		imgLightHoverOn = getImage(getDocumentBase(), "lightHoverOn.png");
+		imgLightHoverOff = getImage(getDocumentBase(), "lightHoverOff.png");
 		imgLightOff = getImage(getDocumentBase(), "lightOff.png");
+		imgTitle = getImage(getDocumentBase(), "Title.png");
 		
 	}
 
 	public void start() {
 
-		// Read high score files
-		// Add x & y coordinates of lights		
-		final int board_x = 475;
-		final int board_y = 175;
-		final int lightSpacing = 75;
+		// Set's the applet's display resolution size.
+		this.setSize(1280, 720);
+		setBackground(Color.black);
 		
+		// Read high score files
+		// Add x & y coordinates of lights
+		final int intLightSpacing = 75;
+		int intBoard_x;
+		if (intBoardSize % 2 == 1)
+			intBoard_x = (getWidth() / 2) - ((intLightRadius * 2 + intLightSpacing - intLightRadius * 2) * (int) Math.floor(intBoardSize / 2)) - intLightRadius;
+		else
+			intBoard_x = (getWidth() / 2) - ((intLightRadius * 2 + intLightSpacing - intLightRadius * 2) * (intBoardSize / 2)) - intLightRadius;
+		final int intBoard_y = 250; // 175
 		for (int depth = 0; depth < 2; depth++)
 			for (int row = 0; row < intBoardSize; row++)
 				for (int column = 0; column < intBoardSize; column++)
 					if (depth == 1)
-						intLightPosition[depth][row][column] = board_y + column * lightSpacing;
+						intLightPosition[depth][row][column] = intBoard_y + column * intLightSpacing;
 					else
-						intLightPosition[depth][row][column] = board_x + row * lightSpacing;
+						intLightPosition[depth][row][column] = intBoard_x + row * intLightSpacing;
 
 		boardRandomize();
 
@@ -95,18 +104,11 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 	}
 
 	public void paint(Graphics g) {
-
+		
 		final int circleWidth = 4;
 		
 		Graphics2D gCircle = (Graphics2D) g;
 		gCircle.setStroke((new BasicStroke(circleWidth)));
-		
-		setBackground(Color.black);
-
-		// Set's the applet's display resolution size.
-		this.setSize(1280, 720);
-
-		g.setColor(Color.red);
 
 		// Draw a Rectangle around the applet's display area.
 		g.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
@@ -114,16 +116,27 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 		/* TESTING CIRCLE BORDER */
 //		gCircle.drawOval(intLightPosition[0][0][0] - circleWidth, intLightPosition[1][0][0] - circleWidth, (intLightRadius + circleWidth) * 2, (intLightRadius + circleWidth) * 2);
 		
+		solution();
+		// Draw Title
+		g.drawImage(imgTitle, getWidth() / 2 - 205, 75, this);
+		
 		for (int row = 0; row < intBoardSize; row++) {
 			for (int column = 0; column < intBoardSize; column++) {
 				if (boolLightState[row][column] == false && boolLightHover[row][column] == false)
 					g.drawImage(imgLightOff, intLightPosition[0][row][column], intLightPosition[1][row][column], this);
 				else if (boolLightState[row][column] && boolLightHover[row][column] == false)
 					g.drawImage(imgLightOn, intLightPosition[0][row][column], intLightPosition[1][row][column], this);
+				else if (boolLightState[row][column] && boolLightHover[row][column])
+					g.drawImage(imgLightHoverOn, intLightPosition[0][row][column], intLightPosition[1][row][column], this);
 				else
-					g.drawImage(imgLightHover, intLightPosition[0][row][column], intLightPosition[1][row][column], this);
-				if (requestSolution) {
-//					boolLightSolution[row][column]
+					g.drawImage(imgLightHoverOff, intLightPosition[0][row][column], intLightPosition[1][row][column], this);
+				if (requestSolution && boolLightSolution[row][column]) {
+					g.setColor(Color.red);
+					gCircle.drawOval(intLightPosition[0][row][column] - circleWidth, intLightPosition[1][row][column] - circleWidth, (intLightRadius + circleWidth) * 2, (intLightRadius + circleWidth) * 2);
+				}
+				else {
+					g.setColor(Color.black);
+					gCircle.drawOval(intLightPosition[0][row][column] - circleWidth, intLightPosition[1][row][column] - circleWidth, (intLightRadius + circleWidth) * 2, (intLightRadius + circleWidth) * 2);
 				}
 			}
 		}
@@ -181,18 +194,17 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 	public void boardRandomize() {
 		
 		for (int row = 0; row < intBoardSize; row++)
-			for (int column = 0; column < intBoardSize; column++) {
-					boolLightState[row][column] = true;
-			}
+			for (int column = 0; column < intBoardSize; column++)
+					boolLightState[row][column] = false;
 		
 		int randomRow, randomColumn;
 		
 		for (int randomCount = 0; randomCount <= 50; randomCount++) {
-			randomRow = (int) (Math.random() * 5);
-			randomColumn = (int) (Math.random() * 5);
-			toggleLight(randomRow, randomColumn);
+			randomRow = (int) (Math.random() * intBoardSize);
+			randomColumn = (int) (Math.random() * intBoardSize);
+			toggleAdjacentLights(randomRow, randomColumn);
 		}
-
+	
 	}
 	
 	public void mouseToggleLight (int x, int y) {
@@ -201,14 +213,6 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 			for (int column = 0; column < intBoardSize; column++)
 				if ((Math.sqrt (Math.pow ((y - intLightPosition [1][row][column] - intLightRadius), 2) + Math.pow((x - intLightPosition [0][row][column] - intLightRadius), 2))) < intLightRadius)
 					toggleAdjacentLights(row, column);
-		
-	}
-	
-	public int[] mouseOverLight (int x, int y) {
-		
-		int[] coordinates = new int[2];
-		
-		return coordinates;
 		
 	}
 	
@@ -256,11 +260,12 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 	
 	public void solution () {
 		
-		for (int row = 0; row < intBoardSize; row++ )
+		for (int row = 0; row < intBoardSize - 1; row++)
 			for (int column = 0; column < intBoardSize; column++)
-				if (boolLightState[row][column]) {
+				if (boolLightState[row][column])
 					boolLightSolution[row + 1][column] = true;
-				}
+				else
+					boolLightSolution[row + 1][column] = false;
 		
 	}
 
