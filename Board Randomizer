@@ -37,9 +37,20 @@ for (int count = 0; count < 25; count++) {
 }
 
 ——————————————————————————————————————————————————————————————————————————————————————————————————————————————
+The occasional issue with the method above is that the toggling of the lights does not math the
+method that the player uses to toggle the lights, as it only toggles a single light,
+and not the ones around it.
+
 The correct method of randomizing the game board is to start from a solved state (all off),
 then toggle the light that was chosen from two random numbers generated,
-but also toggling the lights adjacent to it (above, below, to the left, and to the right)
+but also toggling the lights adjacent to it (above, below, to the left, and to the right).
+
+By doing this, it is for certain that the board is solveable, as the computer randomizes the board
+by doing the actions the player would do to randomize board,
+selecting a light and toggling the ones around it.
+
+Another anology would be as if you started from a solved state, and you could do the reverse the moves
+that the computer generated to unscramble the board back to its solved state.
 ——————————————————————————————————————————————————————————————————————————————————————————————————————————————
 
 ————————————————————
