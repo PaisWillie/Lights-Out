@@ -1,15 +1,27 @@
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.Toolkit;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.util.Arrays;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 
 import javax.swing.JApplet;
+
+import sun.audio.AudioPlayer;
+import sun.audio.AudioStream;
 
 public class LightsOut extends JApplet implements MouseListener, MouseMotionListener {
 
@@ -28,20 +40,55 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 	// Initializes 2D array to track which light needs to be pressed for solution.
 	boolean[][] boolLightSolution = new boolean[intBoardSize][intBoardSize];
 
-	// Initializes 2D array for the x & y coordinates for each light.
+	// Initializes 3D array for the x & y coordinates for each light.
 	int[][][] intLightPosition = new int[2][intBoardSize][intBoardSize];
 
-	final int intLightRadius = 31;
+	// Initializes 1D array for the top 10 scores on the High Score list
+	int[] intHighScoreValue = new int[10];
+	
+	// Initalizes 1D array for the top 10 names on the High Score list
+	String[] strHighScoreName = new String[10];
 
-	Font fntSerif, fntSansSerif, fntMonospaced, fntDialog;
+	// Initializes 2D array for different light state cases for game solution.
+	final boolean[][] boolLightCase = { { true, false, false, false, true }, { false, true, false, true, false },
+			{ true, true, true, false, false }, { false, false, true, true, true }, { true, false, true, true, false },
+			{ false, true, true, false, true }, { true, true, false, true, true } };
 
-	Image imgLightOff, imgLightHoverOn, imgLightHoverOff, imgLightOn, imgTitle;
+	final boolean[][] boolLightCaseSolution = { { true, true, false, false, false },
+			{ true, false, false, true, false }, { false, true, false, false, false },
+			{ false, false, false, true, false }, { false, false, false, false, true },
+			{ true, false, false, false, false }, { false, false, true, false, false } };
 
-	boolean boolRequestSolution = false;
+	boolean[] boolLightSolutionTop = new boolean[intBoardSize];
+
+	boolean boolRequestSolution = true;
 
 	boolean boolGameWin = false;
 
+	final int intLightRadius = 31;
+
+	int intLightsOn = 5;
+
+	Font fntSerif, fntSansSerif, fntMonospaced, fntDialog;
+
+	Image imgLightOff, imgLightHoverOn, imgLightHoverOff, imgLightOn, imgTitle, imgMenu, imgShowSolution;
+
+	Dimension screenSize;
+
+	// Initializes string to keep track of what information should be displayed
+	// Options:
+	// - Board
+	// - Menu
+	// - Options
+	// - Highscore list
+	// - Highscore input
+	// - Restart game
+	// - Game win screen
+	String strDisplay = "Board";
+
 	public void init() {
+
+		screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 
 		addMouseListener(this);
 		addMouseMotionListener(this);
@@ -51,11 +98,13 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 		fntMonospaced = new Font("Monospaced", Font.BOLD, 14);
 		fntDialog = new Font("Dialog", Font.BOLD, 14);
 
-		imgLightOn = getImage(getDocumentBase(), "lightOn.png");
-		imgLightHoverOn = getImage(getDocumentBase(), "lightHoverOn.png");
-		imgLightHoverOff = getImage(getDocumentBase(), "lightHoverOff.png");
-		imgLightOff = getImage(getDocumentBase(), "lightOff.png");
-		imgTitle = getImage(getDocumentBase(), "Title.png");
+		imgLightOn = getImage(getDocumentBase(), "Images/lightOn.png");
+		imgLightHoverOn = getImage(getDocumentBase(), "Images/lightHoverOn.png");
+		imgLightHoverOff = getImage(getDocumentBase(), "Images/lightHoverOff.png");
+		imgLightOff = getImage(getDocumentBase(), "Images/lightOff.png");
+		imgTitle = getImage(getDocumentBase(), "Images/Title.png");
+		imgMenu = getImage(getDocumentBase(), "Images/Menu.png");
+		imgShowSolution = getImage(getDocumentBase(), "Images/ShowSolution.png");
 
 	}
 
@@ -63,30 +112,24 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 
 		// Set's the applet's display resolution size.
 		this.setSize(1280, 720);
+//		this.setSize((int) screenSize.getWidth() / 2, (int) screenSize.getHeight());
 		setBackground(Color.black);
 
 		// Read high score files
-		// Add x & y coordinates of lights
-		final int intLightSpacing = 75;
-		int intBoard_x;
+		try {
+			readHighScore();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 
-		final int intBoard_y = 250; // 175
+		for (int column = 0; column < intBoardSize; column++)
+			boolLightSolutionTop[column] = false;
 
-		if (intBoardSize % 2 == 1)
-			intBoard_x = (getWidth() / 2)
-					- ((intLightRadius * 2 + intLightSpacing - intLightRadius * 2) * (int) Math.floor(intBoardSize / 2))
-					- intLightRadius;
-		else
-			intBoard_x = (getWidth() / 2) - ((intLightRadius * 2 + intLightSpacing - intLightRadius * 2)
-					* (int) Math.floor(intBoardSize / 2));
-
-		for (int depth = 0; depth < 2; depth++)
-			for (int row = 0; row < intBoardSize; row++)
-				for (int column = 0; column < intBoardSize; column++)
-					if (depth == 1)
-						intLightPosition[depth][row][column] = intBoard_y + column * intLightSpacing;
-					else
-						intLightPosition[depth][row][column] = intBoard_x + row * intLightSpacing;
+		try {
+			testHighScore();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 
 		boardRandomize();
 
@@ -104,6 +147,9 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 
 	public void paint(Graphics g) {
 
+		// Fixes position of lights if screen resolution has changed by user while running
+		lightPosition();
+		
 		final int circleWidth = 4;
 
 		Graphics2D gCircle = (Graphics2D) g;
@@ -113,52 +159,88 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 		g.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
 
 		/* TESTING CIRCLE BORDER */
+//		g.setColor(Color.red);
 //		gCircle.drawOval(intLightPosition[0][0][0] - circleWidth, intLightPosition[1][0][0] - circleWidth, (intLightRadius + circleWidth) * 2, (intLightRadius + circleWidth) * 2);
 
 		/* TESTING MIDDLE LINE */
 //		g.setColor(Color.cyan);
 //		g.drawLine(getWidth() / 2, 0, getWidth() / 2, 1280);
 
-		if (boolGameWin == false) {
+		if (strDisplay == "Board")
+			if (boolGameWin == false) {
 
-			// Draw Title
-			g.drawImage(imgTitle, getWidth() / 2 - 205, 75, this);
+				// Draw Lights Out title
+				g.drawImage(imgTitle, getWidth() / 2 - 205, getHeight() / 2 - 325, this);
 
-			for (int row = 0; row < intBoardSize; row++) {
-				for (int column = 0; column < intBoardSize; column++) {
-					if (boolLightState[row][column] == false && boolLightHover[row][column] == false)
-						g.drawImage(imgLightOff, intLightPosition[0][row][column], intLightPosition[1][row][column],
+				// Draw Back To Menu button
+				g.drawImage(imgMenu, getWidth() / 2 - 400, getHeight() / 2 - 55, this);
+
+				// Draw Show Solution button
+				g.drawImage(imgShowSolution, getWidth() / 2 + 200, getHeight() / 2 - 55, this);
+
+				// Boolean flag to prevent drawing more than one solution circle
+				boolean boolShowSolution = true;
+
+				if (boolRequestSolution)
+					solution();
+
+				for (int row = 0; row < intBoardSize; row++) {
+					for (int column = 0; column < intBoardSize; column++) {
+						if (boolLightState[column][row] == false && boolLightHover[column][row] == false)
+							g.drawImage(imgLightOff, intLightPosition[0][column][row], intLightPosition[1][column][row],
+									this);
+						else if (boolLightState[column][row] && boolLightHover[column][row] == false)
+							g.drawImage(imgLightOn, intLightPosition[0][column][row], intLightPosition[1][column][row],
+									this);
+						else if (boolLightState[column][row] && boolLightHover[column][row])
+							g.drawImage(imgLightHoverOn, intLightPosition[0][column][row],
+									intLightPosition[1][column][row], this);
+						else
+							g.drawImage(imgLightHoverOff, intLightPosition[0][column][row],
+									intLightPosition[1][column][row], this);
+
+						// Tests if the user requests solution, if the value of the array
+						if (boolRequestSolution && boolLightSolution[column][row] & boolShowSolution) {
+
+							// Sets boolean value to false to prevent other solution circles from drawing
+							boolShowSolution = false;
+							g.setColor(Color.red);
+							gCircle.drawOval(intLightPosition[0][column][row] - circleWidth,
+									intLightPosition[1][column][row] - circleWidth, (intLightRadius + circleWidth) * 2,
+									(intLightRadius + circleWidth) * 2);
+
+							// Performs if light does not have a solution request
+						} else {
+
+							// Sets graphics color to black
+							g.setColor(Color.black);
+							// Draws a black circle over the existing red circles
+							gCircle.drawOval(intLightPosition[0][column][row] - circleWidth,
+									intLightPosition[1][column][row] - circleWidth, (intLightRadius + circleWidth) * 2,
+									(intLightRadius + circleWidth) * 2);
+						}
+					}
+				}
+
+				// Runs if game is finished and display is set to board
+			} else {
+
+				for (int row = 0; row < intBoardSize; row++)
+					for (int column = 0; column < intBoardSize; column++) {
+						g.drawImage(imgLightOff, intLightPosition[0][column][row], intLightPosition[1][column][row],
 								this);
-					else if (boolLightState[row][column] && boolLightHover[row][column] == false)
-						g.drawImage(imgLightOn, intLightPosition[0][row][column], intLightPosition[1][row][column],
-								this);
-					else if (boolLightState[row][column] && boolLightHover[row][column])
-						g.drawImage(imgLightHoverOn, intLightPosition[0][row][column], intLightPosition[1][row][column],
-								this);
-					else
-						g.drawImage(imgLightHoverOff, intLightPosition[0][row][column],
-								intLightPosition[1][row][column], this);
-					if (boolRequestSolution && boolLightSolution[row][column]) {
-						g.setColor(Color.red);
-						gCircle.drawOval(intLightPosition[0][row][column] - circleWidth,
-								intLightPosition[1][row][column] - circleWidth, (intLightRadius + circleWidth) * 2,
-								(intLightRadius + circleWidth) * 2);
-					} else {
 						g.setColor(Color.black);
-						gCircle.drawOval(intLightPosition[0][row][column] - circleWidth,
-								intLightPosition[1][row][column] - circleWidth, (intLightRadius + circleWidth) * 2,
+						gCircle.drawOval(intLightPosition[0][column][row] - circleWidth,
+								intLightPosition[1][column][row] - circleWidth, (intLightRadius + circleWidth) * 2,
 								(intLightRadius + circleWidth) * 2);
 					}
 
-				}
 			}
-		} else {
 
-			for (int row = 0; row < intBoardSize; row++)
-				for (int column = 0; column < intBoardSize; column++)
-					g.drawImage(imgLightOff, intLightPosition[0][row][column], intLightPosition[1][row][column], this);
+		else if (strDisplay == "Menu") {
 
 		}
+
 	}
 
 	public void mouseEntered(MouseEvent event) {
@@ -178,17 +260,24 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 		int intx = event.getX();
 		int inty = event.getY();
 
-		if (boolGameWin == false) {
-			mouseToggleLight(intx, inty);
+		if (strDisplay.equals("Menu"))
+//			if (menuStart())
+				System.out.println("Starting game");
+		else if (strDisplay.equals("Board"))
+			if (boolGameWin == false) {
+				mouseToggleLight(intx, inty);
 
-			boardSolved();
-			if (boardSolved())
-				boolGameWin = true;
+				boardSolved();
+				
+				if (boardSolved())
+					boolGameWin = true;
 
-			if (boolRequestSolution)
-				solution();
+				if (lightsOnBottom() && lightCase() >= 0)
+					caseSolution();
 
-		}
+				caseSolutionTop(intx, inty);
+
+			}
 
 		repaint();
 
@@ -212,23 +301,76 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 
 	}
 
+	public void lightPosition() {
+		// Add x & y coordinates of lights
+		final int intLightSpacing = 75;
+		int intBoard_x;
+
+//		final int intBoard_y = 175; // 175
+		int intBoard_y;
+
+		if (intBoardSize % 2 == 1) {
+			intBoard_x = (getWidth() / 2)
+					- ((intLightRadius * 2 + intLightSpacing - intLightRadius * 2) * (int) Math.floor(intBoardSize / 2))
+					- intLightRadius;
+			intBoard_y = (getHeight() / 2)
+					- ((intLightRadius * 2 + intLightSpacing - intLightRadius * 2) * (int) Math.floor(intBoardSize / 2))
+					- intLightRadius;
+		} else {
+			intBoard_x = (getWidth() / 2) - ((intLightRadius * 2 + intLightSpacing - intLightRadius * 2)
+					* (int) Math.floor(intBoardSize / 2));
+			intBoard_y = (getHeight() / 2) - ((intLightRadius * 2 + intLightSpacing - intLightRadius * 2)
+					* (int) Math.floor(intBoardSize / 2));
+		}
+
+		for (int depth = 0; depth < 2; depth++)
+			for (int row = 0; row < intBoardSize; row++)
+				for (int column = 0; column < intBoardSize; column++)
+					if (depth == 1)
+						intLightPosition[depth][column][row] = intBoard_y + row * intLightSpacing;
+					else
+						intLightPosition[depth][column][row] = intBoard_x + column * intLightSpacing;
+	}
+	
+	public void soundClick() {
+		try {
+			AudioStream click = new AudioStream(new FileInputStream("click.wav"));
+			AudioPlayer.player.start(click);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
 	public void boardRandomize() {
+
+		for (int row = 0; row < intBoardSize; row++)
+			for (int column = 0; column < intBoardSize; column++)
+				boolLightState[column][row] = false;
+
+		int randomRow, randomColumn;
 
 		do {
 
-			for (int row = 0; row < intBoardSize; row++)
-				for (int column = 0; column < intBoardSize; column++)
-					boolLightState[row][column] = false;
+			randomRow = (int) (Math.random() * intBoardSize);
+			randomColumn = (int) (Math.random() * intBoardSize);
+			toggleAdjacentLights(randomRow, randomColumn);
 
-			int randomRow, randomColumn;
+		} while (lightsOn() != intLightsOn);
 
-			for (int randomCount = 0; randomCount <= intBoardSize * 10; randomCount++) {
-				randomRow = (int) (Math.random() * intBoardSize);
-				randomColumn = (int) (Math.random() * intBoardSize);
-				toggleAdjacentLights(randomRow, randomColumn);
-			}
+		repaint();
 
-		} while (boardSolved());
+	}
+
+	public int lightsOn() {
+
+		int intLightsOn = 0;
+
+		for (int row = 0; row < intBoardSize; row++)
+			for (int column = 0; column < intBoardSize; column++)
+				if (boolLightState[column][row] == true)
+					intLightsOn++;
+
+		return intLightsOn;
 
 	}
 
@@ -236,10 +378,10 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 
 		for (int row = 0; row < intBoardSize; row++)
 			for (int column = 0; column < intBoardSize; column++)
-				if ((Math.sqrt(Math.pow((y - intLightPosition[1][row][column] - intLightRadius), 2)
-						+ Math.pow((x - intLightPosition[0][row][column] - intLightRadius), 2))) < intLightRadius)
+				if (insideLight(x, y, row, column)) {
 					toggleAdjacentLights(row, column);
-
+					soundClick();
+				}
 	}
 
 	public void toggleAdjacentLights(int row, int column) {
@@ -262,12 +404,7 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 
 	public void toggleLight(int row, int column) {
 
-		if (boolLightState[row][column] == false)
-			boolLightState[row][column] = true;
-		else
-			boolLightState[row][column] = false;
-
-		repaint();
+		boolLightState[column][row] = !boolLightState[column][row];
 
 	}
 
@@ -275,11 +412,10 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 
 		for (int row = 0; row < intBoardSize; row++)
 			for (int column = 0; column < intBoardSize; column++)
-				if ((Math.sqrt(Math.pow((y - intLightPosition[1][row][column] - intLightRadius), 2)
-						+ Math.pow((x - intLightPosition[0][row][column] - intLightRadius), 2))) < intLightRadius)
-					boolLightHover[row][column] = true;
+				if (insideLight(x, y, row, column))
+					boolLightHover[column][row] = true;
 				else
-					boolLightHover[row][column] = false;
+					boolLightHover[column][row] = false;
 
 		repaint();
 
@@ -287,14 +423,12 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 
 	public boolean boardSolved() {
 
-		boolean boolBoardSolved = true;
-
 		for (int row = 0; row < intBoardSize; row++)
 			for (int column = 0; column < intBoardSize; column++)
-				if (boolLightState[row][column])
-					boolBoardSolved = false;
+				if (boolLightState[column][row])
+					return false;
 
-		return boolBoardSolved;
+		return true;
 
 	}
 
@@ -302,10 +436,120 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 
 		for (int row = 0; row < intBoardSize - 1; row++)
 			for (int column = 0; column < intBoardSize; column++)
-				if (boolLightState[row][column])
-					boolLightSolution[row + 1][column] = true;
-				else
-					boolLightSolution[row + 1][column] = false;
+				if (boolLightState[column][row]) {
+					boolLightSolution[column][row + 1] = true;
+				} else
+					boolLightSolution[column][row + 1] = false;
 
 	}
+
+	public void caseSolution() {
+
+		for (int column = 0; column < intBoardSize; column++)
+			boolLightSolution[column][0] = boolLightCaseSolution[lightCase()][column];
+
+	}
+
+	public void caseSolutionTop(int x, int y) {
+
+		for (int column = 0; column < intBoardSize; column++)
+			if (insideLight(x, y, 0, column) & boolLightSolution[column][0])
+				boolLightSolution[column][0] = false;
+			else if (insideLight(x, y, 0, column))
+				boolLightSolution[column][0] = true;
+
+	}
+
+	public boolean lightsOnBottom() {
+
+		for (int row = 0; row < intBoardSize - 1; row++)
+			for (int column = 0; column < intBoardSize; column++)
+				if (boolLightState[column][row])
+					return false;
+
+		return true;
+
+	}
+
+	public int lightCase() {
+
+		boolean flag;
+
+		for (int num = 0; num < 7; num++) {
+			flag = true;
+			for (int row = 0; row < intBoardSize; row++)
+				if (boolLightCase[num][row] != boolLightState[row][intBoardSize - 1])
+					flag = false;
+			if (flag == true)
+				return num;
+		}
+
+		return -1;
+
+	}
+
+	public boolean insideLight(int x, int y, int row, int column) {
+
+		if ((Math.sqrt(Math.pow((y - intLightPosition[1][column][row] - intLightRadius), 2)
+				+ Math.pow((x - intLightPosition[0][column][row] - intLightRadius), 2))) < intLightRadius)
+			return true;
+		else
+			return false;
+	}
+
+	// Checks to see if there is a High-Score list file
+	public void testHighScore() throws IOException {
+
+		File highScore = new File("HighScore.txt");
+
+		// Tests if HighScore.txt exists
+		if (highScore.exists())
+			// Read existing High-Score list
+			readHighScore();
+		// Runs if HighScore.txt does not exist
+		else
+			// Create new High-Score list
+			resetHighScore();
+
+	}
+
+	public void readHighScore() throws IOException {
+
+		BufferedReader fileInput = new BufferedReader(new FileReader("HighScore.txt"));
+
+		for (int rank = 0; rank < 10; rank++)
+			intHighScoreValue[rank] = Integer.parseInt(fileInput.readLine());
+
+		fileInput.close();
+
+	}
+
+	public void resetHighScore() throws IOException {
+
+		for (int rank = 0; rank < 10; rank++)
+			intHighScoreValue[rank] = -1;
+
+		writeHighScore();
+
+	}
+
+	public void writeHighScore() throws IOException {
+
+		PrintWriter fileOutput = new PrintWriter(new FileWriter("HighScore.txt"));
+
+		for (int rank = 0; rank < 10; rank++)
+			fileOutput.println(intHighScoreValue[rank]);
+
+		fileOutput.close();
+
+	}
+
+	public void addHighScore() throws IOException {
+
+	}
+
 }
+
+//	System.out.println(testHighScore());
+//	if (testHighScore() == false)
+//		resetHighScore();
