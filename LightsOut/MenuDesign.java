@@ -8,18 +8,18 @@ public class MenuDesign extends JApplet {
 
 	private static final long serialVersionUID = 1L;
 
-	Image imgMenuTitle, imgMenuCenterLine;
-	Image imgMenuPlayOff, imgMenuPlayOn;
-	Image imgMenuOptionsOff, imgMenuOptionsOn;
-	Image imgMenuHighScoresOff, imgMenuHighScoreOn;
+	Image imgTitle, imgCenterLine;
+	Image imgPlayOff, imgMenuPlayOn;
+	Image imgOptionsOff, imgMenuOptionsOn;
+	Image imgHighScoresOff, imgMenuHighScoreOn;
 	
 	public void init() {
 		
-		imgMenuTitle = getImage(getDocumentBase(), "Images/Menu/Title.png");
-		imgMenuCenterLine = getImage(getDocumentBase(), "Images/Menu/CenterLine.png");
-		imgMenuPlayOff = getImage(getDocumentBase(), "Images/Menu/PlayOff.png");
-		imgMenuOptionsOff = getImage(getDocumentBase(), "Images/Menu/OptionsOff.png");
-		imgMenuHighScoresOff = getImage(getDocumentBase(), "Images/Menu/HighScores.png");
+		imgTitle = getImage(getDocumentBase(), "Images/Menu/Title.png");
+		imgCenterLine = getImage(getDocumentBase(), "Images/Menu/CenterLine.png");
+		imgPlayOff = getImage(getDocumentBase(), "Images/Menu/PlayOff.png");
+		imgOptionsOff = getImage(getDocumentBase(), "Images/Menu/OptionsOff.png");
+		imgHighScoresOff = getImage(getDocumentBase(), "Images/Menu/HighScoresOff.png");
 		
 	}
 	
@@ -32,11 +32,21 @@ public class MenuDesign extends JApplet {
 	
 	public void paint(Graphics g) {
 	
-		g.drawImage(imgMenuTitle, getWidth() / 2 - 425, getHeight() / 2 - 66, this);
-		g.drawImage(imgMenuCenterLine, getWidth()/ 2 - 12, getHeight() / 2 - 180, this);
-		g.drawImage(imgMenuPlayOff, getWidth() / 2 + 25, getHeight() / 2 - 150, this);
-		g.drawImage(imgMenuOptionsOff, getWidth() / 2 + 25, getHeight() / 2 - 50, this);
-		g.drawImage(imgMenuHighScoresOff, getWidth() / 2 + 25, getHeight() / 2 + 50, this);
+		g.drawImage(imgTitle, getWidth() / 2 - 425, getHeight() / 2 - 66, this);
+		g.drawImage(imgCenterLine, getWidth()/ 2 - 12, getHeight() / 2 - 180, this);
+		g.drawImage(imgPlayOff, getWidth() / 2 + 25, getHeight() / 2 - 150, this);
+		g.drawImage(imgOptionsOff, getWidth() / 2 + 25, getHeight() / 2 - 50, this);
+		g.drawImage(imgHighScoresOff, getWidth() / 2 + 25, getHeight() / 2 + 50, this);
+		
+		g.setColor(Color.white);
+		// Play button
+		g.drawRect(getWidth() / 2 + 35, getHeight() / 2 - 140,  155, 80);
+		
+		// Options
+		g.drawRect(getWidth() / 2 + 35, getHeight() / 2 - 40, 260, 80);
+		
+		// High scores
+		g.drawRect(getWidth() / 2 + 35, getHeight() / 2 + 60, 370, 80);
 		
 //		g.setColor(Color.white);
 //		g.drawLine(getWidth()/2, 0, getWidth()/2, 720);
