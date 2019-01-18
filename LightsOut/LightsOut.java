@@ -65,7 +65,7 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 	boolean boolGameWin = false;
 
 	boolean boolClearScreen;
-	
+
 	boolean boolClearNumber;
 
 	// Constant for the radius size of the light.
@@ -94,8 +94,8 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 	Image imgDigit0, imgDigit1, imgDigit2, imgDigit3, imgDigit4, imgDigit5, imgDigit6, imgDigit7, imgDigit8, imgDigit9;
 
 	boolean boolPlayButtonState, boolOptionsButtonState, boolHighScoresButtonState, boolBackButtonState,
-			boolHighScoresBackButtonState, boolStartingLightsButtonState, boolIncreaseButtonState,
-			boolDecreaseButtonState, boolBackToMenuButtonState;
+			boolHighScoresBackButtonState, boolStartingLightsButtonState, boolBoardSizeButtonState,
+			boolIncreaseButtonState, boolDecreaseButtonState, boolBackToMenuButtonState;
 
 	Dimension screenSize;
 
@@ -171,15 +171,7 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 	}
 
 	public void start() {
-		
-//		String fonts[] = 
-//			      GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
-//
-//			    for ( int i = 0; i < fonts.length; i++ )
-//			    {
-//			      System.out.println(fonts[i]);
-//			    }
-		
+
 		// Set's the applet's display resolution size.
 		this.setSize(1280, 720);
 		// this.setSize((int) screenSize.getWidth() / 2, (int) screenSize.getHeight());
@@ -236,7 +228,7 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 	}
 
 	public void paint(Graphics g) {
-		
+
 		if (boolClearScreen) {
 
 			g.setColor(Color.black);
@@ -286,7 +278,12 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 				g.drawImage(imgStartingLightsOn, getWidth() / 2 + 25, getHeight() / 2 - 150, this);
 			else
 				g.drawImage(imgStartingLightsOff, getWidth() / 2 + 25, getHeight() / 2 - 150, this);
-			g.drawImage(imgBoardSizeOff, getWidth() / 2 + 25, getHeight() / 2 - 50, this);
+
+			if (boolBoardSizeButtonState)
+				g.drawImage(imgBoardSizeOn, getWidth() / 2 + 25, getHeight() / 2 - 50, this);
+			else
+				g.drawImage(imgBoardSizeOff, getWidth() / 2 + 25, getHeight() / 2 - 50, this);
+
 			g.drawImage(imgBoardSkinsOff, getWidth() / 2 + 25, getHeight() / 2 + 50, this);
 			if (boolBackButtonState)
 				g.drawImage(imgBackOn, getWidth() / 2 - 125, getHeight() / 2 + 80, this);
@@ -296,12 +293,12 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 			break;
 
 		case "StartingLights":
-			
+
 			if (boolClearNumber) {
-				
-				g.clearRect(getWidth() / 2 + 150, getHeight() / 2 - 50, getWidth () / 2 + 250, getHeight() / 2 - 150);
+
+				g.clearRect(getWidth() / 2 + 150, getHeight() / 2 - 50, getWidth() / 2 + 250, getHeight() / 2 - 150);
 				boolClearNumber = false;
-				
+
 			}
 
 			g.drawImage(imgCenterLine, getWidth() / 2 - 12, getHeight() / 2 - 180, this);
@@ -323,7 +320,7 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 				g.drawImage(imgBackOff, getWidth() / 2 - 125, getHeight() / 2 + 80, this);
 
 			if (intStartingLights >= 20) {
-				g.drawImage(imgDigit2, getWidth() / 2 + 150, getHeight() / 2 - 52, this);
+				g.drawImage(imgDigit2, getWidth() / 2 + 140, getHeight() / 2 - 52, this);
 				switch (intStartingLights) {
 
 				case 20:
@@ -538,15 +535,15 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 			g.drawImage(imgTitle, getWidth() / 2 - 205, getHeight() / 2 - 325, this);
 
 			// Draw Show Solution button
-			if (boolRequestSolution)
+			if (boolRequestSolution && intBoardSize == 5)
 				g.drawImage(imgShowSolutionOn, getWidth() / 2 + 250, getHeight() / 2 - 55, this);
-			else
+			else if (intBoardSize == 5)
 				g.drawImage(imgShowSolutionOff, getWidth() / 2 + 250, getHeight() / 2 - 55, this);
 
 			if (boolBackToMenuButtonState)
-				g.drawImage(imgBackToMenuOn, getWidth() / 2 - 450, getHeight() / 2 - 55, this);
+				g.drawImage(imgBackToMenuOn, getWidth() / 2 - 460, getHeight() / 2 - 55, this);
 			else
-				g.drawImage(imgBackToMenuOff, getWidth() / 2 - 450, getHeight() / 2 - 55, this);
+				g.drawImage(imgBackToMenuOff, getWidth() / 2 - 460, getHeight() / 2 - 55, this);
 
 			// Boolean flag to prevent drawing more than one solution circle
 			boolean boolShowSolution = true;
@@ -628,8 +625,6 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 
 	public void mouseReleased(MouseEvent event) {
 
-		gameSolution();
-
 		int intx = event.getX();
 		int inty = event.getY();
 
@@ -639,8 +634,9 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 
 			if (playButton(intx, inty)) {
 
-				strDisplay = "Board";
 				boardRandomize();
+				strDisplay = "Board";
+				gameSolution();
 
 			}
 
@@ -675,24 +671,24 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 		case "StartingLights":
 
 			if (decreaseButton(intx, inty) && intStartingLights > 1) {
-				
+
 				boolClearNumber = true;
 				intStartingLights -= 1;
-				
+
 			}
-			
+
 			if (increaseButton(intx, inty) && intStartingLights < 25) {
-				
+
 				boolClearNumber = true;
 				intStartingLights += 1;
-				
+
 			}
-			
+
 			if (backButton(intx, inty)) {
-				
+
 				strDisplay = "Options";
 				boolClearScreen = true;
-				
+
 			}
 
 			break;
@@ -720,10 +716,10 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 			if (boardSolved())
 				boolGameWin = true;
 
-			if (lightsOnBottom() && lightCase(boolLightState) >= 0 && intBoardSize == 5)
-				caseSolution();
+//			if (lightsOnBottom() && lightCase(boolLightState) >= 0 && intBoardSize == 5)
+//				caseSolution();
 
-			if (showSolutionButton(intx, inty))
+			if (showSolutionButton(intx, inty) && intBoardSize == 5)
 				boolRequestSolution = !boolRequestSolution;
 
 			if (backToMenuButton(intx, inty)) {
@@ -795,6 +791,11 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 			else
 				boolStartingLightsButtonState = false;
 
+			if (boardSizeButton(intx, inty))
+				boolBoardSizeButtonState = true;
+			else
+				boolBoardSizeButtonState = false;
+
 			if (backButton(intx, inty))
 				boolBackButtonState = true;
 			else
@@ -813,12 +814,12 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 				boolIncreaseButtonState = true;
 			else
 				boolIncreaseButtonState = false;
-			
+
 			if (decreaseButton(intx, inty))
 				boolDecreaseButtonState = true;
 			else
 				boolDecreaseButtonState = false;
-			
+
 			break;
 
 		case "HighScores":
@@ -872,13 +873,13 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 			intBoard_x = (getWidth() / 2)
 					- ((intLightRadius * 2 + intLightSpacing - intLightRadius * 2) * (int) Math.floor(intBoardSize / 2))
 					- intLightRadius;
-			intBoard_y = (getHeight() / 2)
+			intBoard_y = (getHeight() / 2 + (intBoardSize - 5) * intLightRadius * 2)
 					- ((intLightRadius * 2 + intLightSpacing - intLightRadius * 2) * (int) Math.floor(intBoardSize / 2))
 					- intLightRadius;
 		} else {
 			intBoard_x = (getWidth() / 2) - ((intLightRadius * 2 + intLightSpacing - intLightRadius * 2)
 					* (int) Math.floor(intBoardSize / 2));
-			intBoard_y = (getHeight() / 2) - ((intLightRadius * 2 + intLightSpacing - intLightRadius * 2)
+			intBoard_y = (getHeight() / 2 + (intBoardSize - 5) * intLightRadius * 5) - ((intLightRadius * 2 + intLightSpacing - intLightRadius)
 					* (int) Math.floor(intBoardSize / 2));
 		}
 
@@ -1039,15 +1040,18 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 				}
 
 //		System.out.println(lightCase(boolLights));
-
-	}
-
-	public void caseSolution() {
-
+		
+		if (lightCase(boolLights) >= 0 && intBoardSize == 5)
 		for (int column = 0; column < intBoardSize; column++)
-			boolLightSolution[column][0] = boolLightCaseSolution[lightCase(boolLightState)][column];
+			boolLightSolution[column][0] = boolLightCaseSolution[lightCase(boolLights)][column];
 
 	}
+
+//	public void caseSolution() {
+//
+//		
+//
+//	}
 
 	public void caseSolutionTop(int x, int y) {
 
@@ -1072,6 +1076,8 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 
 	public int lightCase(boolean[][] array) {
 
+		if (intBoardSize == 5) {
+		
 		boolean flag;
 
 		for (int num = 0; num < 7; num++) {
@@ -1083,6 +1089,8 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 				return num;
 		}
 
+		}
+		
 		return -1;
 
 	}
@@ -1211,9 +1219,8 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 
 	public boolean boardSizeButton(int x, int y) {
 
-		/* Unfinished */
-
-		if (true)
+		if (x >= getWidth() / 2 + 40 && x <= getWidth() / 2 + 375 && y >= getHeight() / 2 - 35
+				&& y <= getHeight() / 2 + 30)
 			return true;
 
 		return false;
@@ -1285,7 +1292,7 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 
 	public boolean backToMenuButton(int x, int y) {
 
-		if (x >= getWidth() / 2 - 440 && x <= getWidth() / 2 - 260 && y >= getHeight() / 2 - 45
+		if (x >= getWidth() / 2 - 450 && x <= getWidth() / 2 - 270 && y >= getHeight() / 2 - 45
 				&& y <= getHeight() / 2 + 55)
 			return true;
 
@@ -1296,56 +1303,6 @@ public class LightsOut extends JApplet implements MouseListener, MouseMotionList
 	public void resetButtons() {
 
 		boolIncreaseButtonState = boolStartingLightsButtonState = boolPlayButtonState = boolOptionsButtonState = boolHighScoresButtonState = boolBackButtonState = boolHighScoresBackButtonState = boolBackToMenuButtonState = false;
-
-	}
-
-	public void drawDigit(int digit, int x, int y, Graphics g) {
-
-		switch (digit) {
-
-		case 0:
-
-			g.drawImage(imgDigit0, x, y, this);
-
-			break;
-
-		case 1:
-
-			break;
-
-		case 2:
-
-			break;
-
-		case 3:
-
-			break;
-
-		case 4:
-
-			break;
-
-		case 5:
-
-			break;
-
-		case 6:
-
-			break;
-
-		case 7:
-
-			break;
-
-		case 8:
-
-			break;
-
-		case 9:
-
-			break;
-
-		}
 
 	}
 
